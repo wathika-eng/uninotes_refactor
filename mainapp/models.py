@@ -32,15 +32,18 @@ class Unit(models.Model):
 
     class Meta:
         unique_together = ["name", "course_name", "year_of_study"]
+        indexes = [
+            models.Index(fields=['course']),  # For prefetch_related
+        ]
 
 
 class Note(models.Model):
-    title = models.CharField(max_length=50, null=True, blank=True)
+    title = models.CharField(max_length=50, null=True, unique=True, blank=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name="notes")
-    file = models.FileField(upload_to=note_file_path)
+    file = models.FileField(upload_to=note_file_path, unique=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    status = models.BooleanField(default=False)
+    status = models.BooleanField(default=True)
 
     def get_display_name(self):
         # Get a cleaned up display name for the note
@@ -64,6 +67,9 @@ class Note(models.Model):
             ("unit", "file"),
             ("title", "unit", "file"),
         )
+        indexes = [
+            models.Index(fields=['-uploaded_at']),  # For recent notes query
+        ]
 
 
 class UserRequest(models.Model):

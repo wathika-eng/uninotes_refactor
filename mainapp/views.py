@@ -1,11 +1,9 @@
 import json
-import traceback
 from django.conf import settings
 from django.contrib import auth, messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 from django.db.models import Count
 from django.core.mail import send_mail
 from django.http import JsonResponse, HttpResponse
@@ -14,6 +12,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views.generic.edit import FormView
 from django_daraja.mpesa.core import MpesaClient
+from django.db.models import Prefetch
+from django.views.decorators.cache import cache_page
 
 from .forms import * 
 from .models import Note, Course, Unit, UserRequest
@@ -58,17 +58,24 @@ def submit_request(request):
         return redirect("dashboard")
     return render(request, "mainapp/modal.html")
 
-
+@cache_page(60 * 15)  # Cache for 15 minutes
 def dashboard(request):
-    courses_with_notes = Course.objects.annotate(
-        notes_count=Count("units__notes")
-    ).filter(notes_count__gt=0).distinct()
+    # Optimized query to get courses with notes and prefetch related data
+    courses_with_notes = Course.objects.filter(
+        units__notes__isnull=False
+    ).distinct().prefetch_related(
+        Prefetch(
+            'units',
+            queryset=Unit.objects.annotate(
+                notes_count=Count('notes')
+            ).filter(notes_count__gt=0).only('id', 'name', 'year_of_study', 'sem')
+        )
+    ).only('id', 'name')  # Only fetch fields we need
 
-    # Fetching the units for each course with their respective year and semester
-    for course in courses_with_notes:
-        course.units_with_year = course.units.values('id', 'name', 'year_of_study', 'sem')
-
-    recent_notes = Note.objects.select_related("unit").order_by("-uploaded_at")[:5]
+    # Get recent notes with optimized query
+    recent_notes = Note.objects.select_related(
+        'unit', 'unit__course'
+    ).order_by('-uploaded_at')[:5]
 
     return render(request, "mainapp/dashboard.html", {
         "courses": courses_with_notes,
@@ -114,27 +121,27 @@ def create_record(request):
     return render(request, "mainapp/create_notes.html", context)
 
 
-def create_unit(request):
-    form = UnitForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        unit = form.save(commit=False)
-        unit.uploaded_by = request.user
-        unit.save()
-        return redirect("unit_list")
-    return render(request, "mainapp/unit_create.html", {"form": form})
+# def create_unit(request):
+#     form = UnitForm(request.POST or None)
+#     if request.method == "POST" and form.is_valid():
+#         unit = form.save(commit=False)
+#         unit.uploaded_by = request.user
+#         unit.save()
+#         return redirect("unit_list")
+#     return render(request, "mainapp/unit_create.html", {"form": form})
 
 
-def send_password_reset_email(request):
-    user = User.objects.get(username="username")  # Replace with real user query
-    html_message = render_to_string("mainapp/registration/email/password_reset_email.html", {"user": user})
-    send_mail(
-        "Password Reset Request",
-        "",
-        "testkuku23@gmail.com",
-        [user.email],
-        html_message=html_message
-    )
-    return render(request, "mainapp/registration/password_reset_done.html")
+# def send_password_reset_email(request):
+#     user = User.objects.get(username="username")  # Replace with real user query
+#     html_message = render_to_string("mainapp/registration/email/password_reset_email.html", {"user": user})
+#     send_mail(
+#         "Password Reset Request",
+#         "",
+#         "testkuku23@gmail.com",
+#         [user.email],
+#         html_message=html_message
+#     )
+#     return render(request, "mainapp/registration/password_reset_done.html")
 
 
 def mpesa(request):

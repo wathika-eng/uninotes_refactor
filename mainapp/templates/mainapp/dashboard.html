@@ -1,9 +1,5 @@
-{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %}
-{%block content %}
-<link
-	rel="stylesheet"
-	href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css" />
-
+{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %} 
+{% block content %}
 <div class="container-sm" id="alert-container"></div>
 
 <a
@@ -18,52 +14,50 @@
 <div class="row">
 	<div class="col-md-8">
 		<h4>Upload notes and past papers</h4>
-		<table class="table table-hover" id="coursesTable">
-			<thead>
-				<tr>
-					<th>#</th>
-					<th>Course</th>
-					<th>Unit</th>
-					<th>Year</th>
-				</tr>
-			</thead>
-			<tbody>
-				{% for course in courses %}
-				<tr>
-					<td>{{ forloop.counter }}</td>
-					<td>
-						<a
-							href="{% url 'course_details' course.pk %}"
-							class="text-decoration-none">
-							{{ course.get_display_name }}
-						</a>
-					</td>
-					<td>
-						{% if course.units.all %} {% for unit in course.units.all %}
-						<div>{{ unit.name }}</div>
-						{% empty %}
-						<div>No units available</div>
-						{% endfor %} {% else %}
-						<div>No units available</div>
-						{% endif %}
-					</td>
-					<td>
-						{% if course.units.all %} {% for unit in course.units.all %}
-						<div>Year {{ unit.year_of_study }}</div>
-						{% empty %}
-						<div>No year info available</div>
-						{% endfor %} {% else %}
-						<div>No year info available</div>
-						{% endif %}
-					</td>
-				</tr>
-				{% empty %}
-				<tr>
-					<td colspan="4">No courses with notes found.</td>
-				</tr>
-				{% endfor %}
-			</tbody>
-		</table>
+		<div class="table-responsive">
+			<table class="table table-hover" id="coursesTable">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>Course</th>
+						<th>Unit</th>
+						<th>Year</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for course in courses %}
+					<tr>
+						<td>{{ forloop.counter }}</td>
+						<td>
+							<a
+								href="{% url 'course_details' course.pk %}"
+								class="text-decoration-none">
+								{{ course.get_display_name }}
+							</a>
+						</td>
+						<td>
+							{% for unit in course.units.all %}
+							<div>{{ unit.name }}</div>
+							{% empty %}
+							<div>No units available</div>
+							{% endfor %}
+						</td>
+						<td>
+							{% for unit in course.units.all %}
+							<div>Year {{ unit.year_of_study }}</div>
+							{% empty %}
+							<div>No year info available</div>
+							{% endfor %}
+						</td>
+					</tr>
+					{% empty %}
+					<tr>
+						<td colspan="4">No courses with notes found.</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
 	</div>
 
 	<div class="col-md-4">
@@ -85,43 +79,81 @@
 	</div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<!-- Defer non-critical CSS -->
+<link
+	rel="preload"
+	href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.2.2/sp-2.3.3/datatables.min.css"
+	as="style"
+	onload="this.onload=null;this.rel='stylesheet'" />
+<noscript
+	><link
+		rel="stylesheet"
+		href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.2.2/sp-2.3.3/datatables.min.css"
+/></noscript>
+
+<!-- Async load scripts -->
 <script>
-	$(function () {
-		const table = $('#coursesTable').DataTable();
-		let ascending = true;
-		$('#sortButton').click(function () {
-			table.order([1, ascending ? 'asc' : 'desc']).draw();
-			$(this).text(ascending ? 'Z to A' : 'A to Z');
-			ascending = !ascending;
+	// Load DataTables asynchronously
+	function loadDataTables() {
+		return new Promise((resolve) => {
+			const script = document.createElement('script');
+			script.src =
+				'https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.2.2/sp-2.3.3/datatables.min.js';
+			script.integrity =
+				'sha384-MjVPod5igILAsS+O7xYQVjw2BSbvoQu6VYaWz4T0AkahtsrQzws6mN+DRUTKBUa+';
+			script.crossOrigin = 'anonymous';
+			script.onload = resolve;
+			document.body.appendChild(script);
+		});
+	}
+
+	// Initialize after DOM and scripts are ready
+	document.addEventListener('DOMContentLoaded', function () {
+		// Auth check handler
+		document
+			.getElementById('newNoteButton')
+			.addEventListener('click', function (event) {
+				const isAuthenticated =
+					"{{ user.is_authenticated|yesno:'true,false' }}";
+				if (isAuthenticated !== 'true') {
+					event.preventDefault();
+					const alertHTML = `
+          <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            You need to be authenticated to upload notes.
+            <button type="button" class="btn btn-warning btn-sm ms-2" id="loginBtn">Login</button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="alert">Cancel</button>
+          </div>
+        `;
+					document.getElementById('alert-container').innerHTML = alertHTML;
+					if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+
+					document
+						.getElementById('loginBtn')
+						.addEventListener('click', function () {
+							window.location.href = '{% url "login" %}';
+						});
+				}
+			});
+
+		// Initialize DataTables after load
+		loadDataTables().then(() => {
+			const table = $('#coursesTable').DataTable({
+				paging: true,
+				searching: true,
+				info: false,
+				ordering: true,
+				responsive: true,
+				initComplete: function () {
+					// Sort button toggles Course column A-Z or Z-A
+					let asc = true;
+					$('#sortButton').on('click', function () {
+						table.order([1, asc ? 'asc' : 'desc']).draw();
+						asc = !asc;
+						$(this).text(asc ? 'A to Z' : 'Z to A');
+					});
+				},
+			});
 		});
 	});
-</script>
-
-<script>
-	document
-		.getElementById('newNoteButton')
-		.addEventListener('click', function (event) {
-			const isAuthenticated = "{{ user.is_authenticated|yesno:'true,false' }}";
-			if (isAuthenticated !== 'true') {
-				event.preventDefault();
-				const alertHTML = `
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    You need to be authenticated to upload notes.
-                    <button type="button" class="btn btn-warning btn-sm ms-2" id="loginBtn">Login</button>
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="alert">Cancel</button>
-                </div>
-            `;
-				document.getElementById('alert-container').innerHTML = alertHTML;
-				if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-
-				document
-					.getElementById('loginBtn')
-					.addEventListener('click', function () {
-						window.location.href = '{% url "login" %}';
-					});
-			}
-		});
 </script>
 {% endblock %}

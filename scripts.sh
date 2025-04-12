@@ -17,3 +17,5 @@ python manage.py runserver
 
 # reset the database
 python manage.py flush
+
+uvicorn mainproject.asgi:application --host 0.0.0.0 --port 8000

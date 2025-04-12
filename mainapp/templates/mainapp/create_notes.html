@@ -1,113 +1,189 @@
-{% extends "mainapp/base.html" %} {% load crispy_forms_filters %} {% load
-crispy_forms_tags %} {% block title %} Upload {% endblock %} {% block content %}
+{% extends "mainapp/base.html" %} {% load crispy_forms_tags crispy_forms_filters
+%} {% block title %}Upload{% endblock %} {% block content %}
+<div class="container mt-4 bg-light py-5">
+	<!-- Heading -->
+	<h2 class="text-center mb-4">Upload Note</h2>
 
-<h2 style="text-align: text-center">Note details:</h2>
-{% include "components/notes_form.html" %}
+	<!-- Flash Messages -->
+	{% for message in messages %}
+	<div class="alert alert-warning alert-dismissible fade show" role="alert">
+		{{ message }}
+		<button
+			type="button"
+			class="btn-close"
+			data-bs-dismiss="alert"
+			aria-label="Close"></button>
+	</div>
+	{% endfor %}
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<!-- AJAX Success Message -->
+	<div
+		id="success-alert"
+		class="alert alert-success alert-dismissible fade show d-none"
+		role="alert">
+		Note created successfully!
+		<button
+			type="button"
+			class="btn-close"
+			data-bs-dismiss="alert"
+			aria-label="Close"></button>
+	</div>
+
+	<!-- Upload Form -->
+	<div class="bg-white shadow-sm rounded-4 p-5">
+		<form id="notes-form" enctype="multipart/form-data" method="POST">
+			{% csrf_token %}
+
+			<!-- Course Field -->
+			<div class="mb-3">
+				<label for="course" class="form-label">Course:</label>
+				<select id="course" name="course" required class="form-select">
+					<option value="">Select</option>
+				</select>
+			</div>
+
+			<!-- Unit Field -->
+			<div class="mb-3">
+				<label for="unit" class="form-label">Unit:</label>
+				<select id="unit" name="unit" required class="form-select">
+					<option value="">Select</option>
+				</select>
+			</div>
+
+			<!-- File Input -->
+			<div class="mb-3">
+				<label for="note_file" class="form-label">Note File:</label>
+				<input
+					type="file"
+					id="note_file"
+					name="note_file"
+					class="form-control"
+					multiple
+					required
+					accept=".pdf,.doc,.docx,.pptx,.rtf,.png,.jpeg,.jpg" />
+				<div id="fileSizeWarning" class="text-danger mt-2 d-none">
+					<strong>File size exceeds 20MB. Please select a smaller file.</strong>
+				</div>
+			</div>
+
+			<!-- Progress Bar -->
+			<div class="progress mb-3 d-none" id="upload-progress">
+				<div
+					id="progress-bar"
+					class="progress-bar progress-bar-striped progress-bar-animated"
+					role="progressbar"
+					style="width: 0%"
+					aria-valuenow="0"
+					aria-valuemin="0"
+					aria-valuemax="100"></div>
+			</div>
+
+			<!-- Submit Button -->
+			<button type="submit" id="submitBtn" class="btn btn-primary w-100">
+				Submit
+			</button>
+		</form>
+	</div>
+</div>
+
+<!-- Scripts -->
+<script
+	src="https://code.jquery.com/jquery-3.7.1.min.js"
+	crossorigin="anonymous"></script>
 <script>
-	$(document).ready(async function () {
-		async function loadDataFromLocalStorage() {
-			const items = ['college', 'school', 'department', 'course', 'unit'];
-			for (const item of items) {
-				const id = localStorage.getItem(item + 'Id');
-				if (id) {
-					$('#' + item).val(id);
-					await populateDropdown(item);
-				}
-			}
-		}
+	$(function () {
+		// Populate course dropdown
+		populateSelect('/get_courses/', '#course');
 
-		async function populateDropdown(dropdownId, parentId = null) {
-			const urls = {
-				college: '/get_colleges/',
-				school: '/get_schools/',
-				department: '/get_departments/',
-				course: '/get_courses/',
-				unit: '/get_units/',
-			};
-			const params = {};
-			if (parentId) {
-				params[parentId + '_id'] = $('#' + parentId).val();
-			}
-
-			try {
-				const response = await $.ajax({
-					url: urls[dropdownId],
-					method: 'GET',
-					data: params,
-				});
-
-				const dropdown = $('#' + dropdownId);
-				dropdown.empty().append(
-					$('<option>', {
-						value: '',
-						text:
-							'Select ' +
-							dropdownId.charAt(0).toUpperCase() +
-							dropdownId.slice(1),
-					})
-				);
-
-				const data = response[dropdownId + 's'] || response;
-				$.each(data, function (index, item) {
-					dropdown.append($('<option>', { value: item.id, text: item.name }));
-				});
-
-				// Clear child dropdowns
-				const childDropdowns = {
-					college: ['school', 'department', 'course', 'unit'],
-					school: ['department', 'course', 'unit'],
-					department: ['course', 'unit'],
-					course: ['unit'],
-					unit: [],
-				};
-				childDropdowns[dropdownId].forEach((child) => $('#' + child).empty());
-			} catch (error) {
-				console.error('Error fetching ' + dropdownId + 's:', error);
-			}
-		}
-
-		// Event listeners for dropdowns
-		$('#college').change(() => populateDropdown('school', 'college'));
-		$('#school').change(() => populateDropdown('department', 'school'));
-		$('#department').change(() => populateDropdown('course', 'department'));
-		$('#course').change(() => populateDropdown('unit', 'course'));
-
-		$('#notes-form').submit(async function (e) {
-			e.preventDefault();
-			const formData = new FormData(this);
-
-			// Save selected values to localStorage
-			['college', 'school', 'department', 'course', 'unit'].forEach((item) => {
-				localStorage.setItem(item + 'Id', $('#' + item).val());
-			});
-
-			try {
-				const response = await $.ajax({
-					url: '/submit_notes/',
-					method: 'POST',
-					processData: false,
-					contentType: false,
-					data: formData,
-				});
-
-				if (response.success) {
-					$('#success-note').removeClass('d-none').addClass('d-block');
-					setTimeout(() => {
-						window.location.href = response.message;
-					}, 3000);
-				} else {
-					throw new Error('Submission was not successful');
-				}
-			} catch (error) {
-				alert('Something went wrong');
-				console.error('Error submitting form:', error);
+		// On course change, fetch related units
+		$('#course').on('change', function () {
+			const courseId = $(this).val();
+			if (courseId) {
+				populateSelect(`/get_units/?course_id=${courseId}`, '#unit');
+			} else {
+				$('#unit').empty().append('<option value="">Select</option>');
 			}
 		});
 
-		await loadDataFromLocalStorage();
-		await populateDropdown('college');
+		// Populate helper function
+		function populateSelect(url, selectId) {
+			$.get(url, function (data) {
+				const select = $(selectId);
+				select.empty().append('<option value="">Select</option>');
+				data.forEach((item) => {
+					select.append(`<option value="${item.id}">${item.name}</option>`);
+				});
+			});
+		}
+
+		// Validate file size on change
+		$('#note_file').on('change', function () {
+			const maxFileSize = 20 * 1024 * 1024; // 20MB
+			const files = this.files;
+			let tooLarge = false;
+
+			for (const file of files) {
+				if (file.size > maxFileSize) {
+					tooLarge = true;
+					break;
+				}
+			}
+
+			$('#fileSizeWarning').toggleClass('d-none', !tooLarge);
+		});
+
+		// AJAX File Upload with Progress
+		$('#notes-form').on('submit', function (e) {
+			e.preventDefault();
+			const formData = new FormData(this);
+			$('#submitBtn').text('Uploading...');
+			$('#upload-progress').removeClass('d-none');
+
+			$.ajax({
+				xhr: function () {
+					const xhr = new XMLHttpRequest();
+					xhr.upload.addEventListener('progress', function (e) {
+						if (e.lengthComputable) {
+							const percent = Math.round((e.loaded / e.total) * 100);
+							$('#progress-bar')
+								.css('width', `${percent}%`)
+								.attr('aria-valuenow', percent)
+								.text(`${percent}%`);
+						}
+					});
+					return xhr;
+				},
+				type: 'POST',
+				url: '/submit_notes/',
+				data: formData,
+				contentType: false,
+				processData: false,
+				success: function () {
+					$('#progress-bar')
+						.removeClass('bg-danger')
+						.addClass('bg-success')
+						.text('Upload complete');
+					$('#success-alert').removeClass('d-none');
+					$('#notes-form')[0].reset();
+				},
+				error: function () {
+					$('#progress-bar')
+						.removeClass('bg-success')
+						.addClass('bg-danger')
+						.text('Upload failed!');
+				},
+				complete: function () {
+					$('#submitBtn').text('Submit');
+					setTimeout(() => {
+						$('#upload-progress').addClass('d-none');
+						$('#progress-bar')
+							.removeClass('bg-success bg-danger')
+							.css('width', '0%')
+							.text('');
+					}, 3000);
+				},
+			});
+		});
 	});
 </script>
 {% endblock %}
