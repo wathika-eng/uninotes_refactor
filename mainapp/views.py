@@ -15,7 +15,7 @@ from django_daraja.mpesa.core import MpesaClient
 from django.db.models import Prefetch
 from django.views.decorators.cache import cache_page
 
-from .forms import * 
+from .forms import *
 from .models import Note, Course, Unit, UserRequest
 
 
@@ -58,29 +58,34 @@ def submit_request(request):
         return redirect("dashboard")
     return render(request, "mainapp/modal.html")
 
+
 @cache_page(60 * 15)  # Cache for 15 minutes
 def dashboard(request):
     # Optimized query to get courses with notes and prefetch related data
-    courses_with_notes = Course.objects.filter(
-        units__notes__isnull=False
-    ).distinct().prefetch_related(
-        Prefetch(
-            'units',
-            queryset=Unit.objects.annotate(
-                notes_count=Count('notes')
-            ).filter(notes_count__gt=0).only('id', 'name', 'year_of_study', 'sem')
+    courses_with_notes = (
+        Course.objects.filter(units__notes__isnull=False)
+        .distinct()
+        .prefetch_related(
+            Prefetch(
+                "units",
+                queryset=Unit.objects.annotate(notes_count=Count("notes"))
+                .filter(notes_count__gt=0)
+                .only("id", "name", "year_of_study", "sem"),
+            )
         )
-    ).only('id', 'name')  # Only fetch fields we need
+        .only("id", "name")
+    )  # Only fetch fields we need
 
     # Get recent notes with optimized query
-    recent_notes = Note.objects.select_related(
-        'unit', 'unit__course'
-    ).order_by('-uploaded_at')[:5]
+    recent_notes = Note.objects.select_related("unit", "unit__course").order_by(
+        "-uploaded_at"
+    )[:5]
 
-    return render(request, "mainapp/dashboard.html", {
-        "courses": courses_with_notes,
-        "notes": recent_notes
-    })
+    return render(
+        request,
+        "mainapp/dashboard.html",
+        {"courses": courses_with_notes, "notes": recent_notes},
+    )
 
 
 class FileFieldFormView(FormView):
@@ -93,11 +98,11 @@ class FileFieldFormView(FormView):
         for f in files:
             if Note.objects.filter(title=f.name).exists():
                 messages.warning(self.request, f"File '{f.name}' already exists.")
-                return JsonResponse({"success": False, "message": "File already exists"})
+                return JsonResponse(
+                    {"success": False, "message": "File already exists"}
+                )
             Note.objects.create(
-                file=f,
-                uploaded_by=self.request.user,
-                unit=form.cleaned_data["unit"]
+                file=f, uploaded_by=self.request.user, unit=form.cleaned_data["unit"]
             )
         messages.success(self.request, "Files uploaded successfully")
         return super().form_valid(form)
@@ -116,7 +121,9 @@ def create_record(request):
         "form": form,
         "courses": Course.objects.all(),
         "units": Unit.objects.all(),
-        "notes": Note.objects.select_related("college", "school", "department", "course", "unit"),
+        "notes": Note.objects.select_related(
+            "college", "school", "department", "course", "unit"
+        ),
     }
     return render(request, "mainapp/create_notes.html", context)
 
@@ -158,13 +165,16 @@ def mpesa(request):
             amount,
             "reference",
             "Payment for services",
-            settings.MPESA_CALLBACK_URL
+            settings.MPESA_CALLBACK_URL,
         )
 
         context = {
             "previous_url": request.META.get("HTTP_REFERER"),
-            "success_message" if response.get("status") == "success" else "error_message":
-                "Payment initiated successfully!" if response.get("status") == "success" else "Payment initiation failed. Please try again."
+            "success_message"
+            if response.get("status") == "success"
+            else "error_message": "Payment initiated successfully!"
+            if response.get("status") == "success"
+            else "Payment initiation failed. Please try again.",
         }
         return render(request, "mainapp/money.html", context)
 
@@ -186,16 +196,20 @@ def mpesa_callback(request):
         phone_number = metadata[4].get("Value") if len(metadata) > 4 else None
 
         if result_code == "0":
-            return JsonResponse({
-                "status": "success",
-                "message": "Payment confirmed successfully.",
-                "amount": amount,
-                "phone_number": phone_number,
-            })
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Payment confirmed successfully.",
+                    "amount": amount,
+                    "phone_number": phone_number,
+                }
+            )
         return JsonResponse({"status": "failed", "message": result_desc})
 
     except (json.JSONDecodeError, IndexError, KeyError) as e:
-        return JsonResponse({"status": "error", "message": "Invalid callback data.", "error": str(e)})
+        return JsonResponse(
+            {"status": "error", "message": "Invalid callback data.", "error": str(e)}
+        )
 
 
 def error_404_view(request, exception):

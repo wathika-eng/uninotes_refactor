@@ -5,25 +5,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('mainapp', '0001_initial'),
+        ("mainapp", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='note',
-            name='file',
-            field=models.FileField(unique=True, upload_to=mainapp.models.note_file_path),
+            model_name="note",
+            name="file",
+            field=models.FileField(
+                unique=True, upload_to=mainapp.models.note_file_path
+            ),
         ),
         migrations.AlterField(
-            model_name='note',
-            name='status',
+            model_name="note",
+            name="status",
             field=models.BooleanField(default=True),
         ),
         migrations.AlterField(
-            model_name='note',
-            name='title',
+            model_name="note",
+            name="title",
             field=models.CharField(blank=True, max_length=50, null=True, unique=True),
         ),
     ]

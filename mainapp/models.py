@@ -6,17 +6,21 @@ from django.db import models
 def note_file_path(instance, filename):
     # Generate the path where the file will be stored
     ext = filename.split(".")[-1]
-    filename = f"{instance.title[:20]}.{ext}"  # Title shortened to 20 chars for uniqueness
+    filename = (
+        f"{instance.title[:20]}.{ext}"  # Title shortened to 20 chars for uniqueness
+    )
     return os.path.join("media/", filename)
 
 
 class Course(models.Model):
     name = models.CharField(max_length=100)
+
     def __str__(self):
         return f"{self.name}"
 
     def get_display_name(self):
         return f"{self.name}"
+
 
 class Unit(models.Model):
     name = models.CharField(max_length=100)
@@ -24,16 +28,18 @@ class Unit(models.Model):
     year_of_study = models.CharField(max_length=20, null=True)  # User-defined
     sem = models.CharField(max_length=20, null=True)
     course = models.ForeignKey(Course, related_name="units", on_delete=models.CASCADE)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="units", blank=True, null=True)
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="units", blank=True, null=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"{self.course_name.upper()}: {self.name} ({self.year_of_study}, Sem {self.sem})"
 
     class Meta:
         unique_together = ["name", "course_name", "year_of_study"]
         indexes = [
-            models.Index(fields=['course']),  # For prefetch_related
+            models.Index(fields=["course"]),  # For prefetch_related
         ]
 
 
@@ -41,7 +47,9 @@ class Note(models.Model):
     title = models.CharField(max_length=50, null=True, unique=True, blank=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name="notes")
     file = models.FileField(upload_to=note_file_path, unique=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, blank=True, null=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=True)
 
@@ -68,7 +76,7 @@ class Note(models.Model):
             ("title", "unit", "file"),
         )
         indexes = [
-            models.Index(fields=['-uploaded_at']),  # For recent notes query
+            models.Index(fields=["-uploaded_at"]),  # For recent notes query
         ]
 
 

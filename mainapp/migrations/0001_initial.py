@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -16,50 +15,118 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Course',
+            name="Course",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
             ],
         ),
         migrations.CreateModel(
-            name='UserRequest',
+            name="UserRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('yourschool', models.CharField(max_length=100, null=True)),
-                ('yourcourse', models.CharField(max_length=100, null=True)),
-                ('enquiry', models.TextField(blank=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("yourschool", models.CharField(max_length=100, null=True)),
+                ("yourcourse", models.CharField(max_length=100, null=True)),
+                ("enquiry", models.TextField(blank=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Unit',
+            name="Unit",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('course_name', models.CharField(max_length=100)),
-                ('year_of_study', models.CharField(max_length=20, null=True)),
-                ('sem', models.CharField(max_length=20, null=True)),
-                ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='units', to='mainapp.course')),
-                ('uploaded_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='units', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("course_name", models.CharField(max_length=100)),
+                ("year_of_study", models.CharField(max_length=20, null=True)),
+                ("sem", models.CharField(max_length=20, null=True)),
+                ("uploaded_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="units",
+                        to="mainapp.course",
+                    ),
+                ),
+                (
+                    "uploaded_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="units",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('name', 'course_name', 'year_of_study')},
+                "unique_together": {("name", "course_name", "year_of_study")},
             },
         ),
         migrations.CreateModel(
-            name='Note',
+            name="Note",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(blank=True, max_length=50, null=True)),
-                ('file', models.FileField(upload_to=mainapp.models.note_file_path)),
-                ('uploaded_at', models.DateTimeField(auto_now_add=True)),
-                ('status', models.BooleanField(default=False)),
-                ('uploaded_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('unit', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notes', to='mainapp.unit')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(blank=True, max_length=50, null=True)),
+                ("file", models.FileField(upload_to=mainapp.models.note_file_path)),
+                ("uploaded_at", models.DateTimeField(auto_now_add=True)),
+                ("status", models.BooleanField(default=False)),
+                (
+                    "uploaded_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "unit",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="notes",
+                        to="mainapp.unit",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('title', 'file'), ('title', 'unit'), ('title', 'unit', 'file'), ('unit', 'file')},
+                "unique_together": {
+                    ("title", "file"),
+                    ("title", "unit"),
+                    ("title", "unit", "file"),
+                    ("unit", "file"),
+                },
             },
         ),
     ]

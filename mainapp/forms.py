@@ -46,7 +46,12 @@ class NoteForm(forms.ModelForm):
 class UnitForm(forms.ModelForm):
     class Meta:
         model = Unit
-        fields = ["name", "course", "year_of_study", "sem"]  # Adjusted based on the current model
+        fields = [
+            "name",
+            "course",
+            "year_of_study",
+            "sem",
+        ]  # Adjusted based on the current model
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -58,4 +63,6 @@ class UnitForm(forms.ModelForm):
             except (ValueError, TypeError):
                 self.fields["course"].queryset = Course.objects.none()
         elif self.instance.pk:
-            self.fields["course"].queryset = Course.objects.filter(id=self.instance.course_id)
+            self.fields["course"].queryset = Course.objects.filter(
+                id=self.instance.course_id
+            )
