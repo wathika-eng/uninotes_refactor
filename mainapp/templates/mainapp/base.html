@@ -1,0 +1,95 @@
+{% load static %}
+{% load cloudinary %}
+<!DOCTYPE html>
+<html lang="en-KE">
+<head>
+    <!-- MS Clarity -->
+
+    <!-- Google verification -->
+    <meta name="google-site-verification" content="3XoDHZRdVBPFB_OnbMbeCOGh7lQvRDCplIPBNGxmrbM" />
+    <!-- Bootstrap -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet"> -->
+    <link type="text/css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <link type="text/css" rel="stylesheet" href="{% static '/css/index.css' %}">
+    <meta charset="UTF-8">
+    <!-- SEO -->
+    <meta name="title" content="JKUAT notes">
+    <meta name="description" content="A platform where students from JKUAT, can get notes for revision purpose.">
+    <meta name="keywords" content="JKUAT, univeristy notes, notes, uninotes">
+    <meta name="robots" content="index,follow">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="language" content="English">
+    <link rel="canonical" href="https://classnotes.azurewebsites.net/dash">
+    <link rel="backlink" href="https://classnotes.azurewebsites.net/upload_notes">
+
+    <meta name="revisit-after" content="30 days">
+    <meta name="author" content="classrep">
+    <meta name="publisher" content="classrep">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-01MWH867GL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-01MWH867GL');
+    </script>
+
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/dwdblvoxm/image/upload/f_auto,q_auto/v1/static/7349bd7f47b557e33a428333fe1fe5b0">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://res.cloudinary.com/dwdblvoxm/image/upload/f_auto,q_auto/v1/static/e38d43ff0fff5fb1addb09dd7fe1a82f">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/dwdblvoxm/image/upload/f_auto,q_auto/v1/static/f8b2e1659a67f79149889370df68c2ad">
+    <link rel="manifest" href="https://res.cloudinary.com/dwdblvoxm/raw/upload/v1/static/053100cb84a50d2ae7f5492f7dd7f25e.webmanifest">
+    <link rel="apple-touch-icon" sizes="512x512" href="https://res.cloudinary.com/dwdblvoxm/image/upload/v1703278845/static/58675f2fe4dd70f04b6b0588e21fccae.png">
+    <!-- title -->
+    <title class="sma">Notes Info System | {% block title %}{% endblock %}
+    </title>
+
+</head>
+<body>
+<!----------navbar-------------->
+{% include "mainapp/nav.html" %}
+<noscript>
+    <div style="text-align: center; margin-top: 50px;">
+        <strong> 
+        <p>This page requires JavaScript to function properly.</p>
+        <p>Please enable JavaScript in your browser settings.</p>
+        </strong>
+    </div>
+</noscript>
+<div class="container">
+    
+    <br>
+    <!-------notifications --->
+     <div class="row">
+        <div class="col-sm-12 col-md-8 col-lg-8 mx-auto">
+        {% for message in messages %}
+        <div id="myAlert" class="alert alert-danger alert-dismissible fade show" role="alert">
+          <strong>{{ message }}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    </div>
+    <div >
+    {% block content %}
+        <!---------new content----->
+    {% endblock %}
+    </div>
+</div>
+
+<!-----------------------JavaScript codes----------->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+        integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
+        integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+<!-- ADsense -->
+<!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8318361368777259"
+crossorigin="anonymous"></script> -->
+
+</body>
+</html>

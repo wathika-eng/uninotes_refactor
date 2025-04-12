@@ -1,0 +1,127 @@
+{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %}
+{%block content %}
+<link
+	rel="stylesheet"
+	href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css" />
+
+<div class="container-sm" id="alert-container"></div>
+
+<a
+	id="newNoteButton"
+	href="{% url 'create_record' %}"
+	class="btn btn-outline-success mb-3">
+	Start uploading notes/past papers <i class="bi bi-file-plus"></i>
+</a>
+
+<button class="btn btn-outline-secondary mb-3" id="sortButton">A to Z</button>
+
+<div class="row">
+	<div class="col-md-8">
+		<h4>Upload notes and past papers</h4>
+		<table class="table table-hover" id="coursesTable">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Course</th>
+					<th>Unit</th>
+					<th>Year</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for course in courses %}
+				<tr>
+					<td>{{ forloop.counter }}</td>
+					<td>
+						<a
+							href="{% url 'course_details' course.pk %}"
+							class="text-decoration-none">
+							{{ course.get_display_name }}
+						</a>
+					</td>
+					<td>
+						{% if course.units.all %} {% for unit in course.units.all %}
+						<div>{{ unit.name }}</div>
+						{% empty %}
+						<div>No units available</div>
+						{% endfor %} {% else %}
+						<div>No units available</div>
+						{% endif %}
+					</td>
+					<td>
+						{% if course.units.all %} {% for unit in course.units.all %}
+						<div>Year {{ unit.year_of_study }}</div>
+						{% empty %}
+						<div>No year info available</div>
+						{% endfor %} {% else %}
+						<div>No year info available</div>
+						{% endif %}
+					</td>
+				</tr>
+				{% empty %}
+				<tr>
+					<td colspan="4">No courses with notes found.</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="col-md-4">
+		<h4>Recently Added Notes</h4>
+		{% for note in notes %}
+		<div class="mb-2">
+			<a
+				href="{{ note.file.url }}"
+				target="_blank"
+				class="text-decoration-none text-primary">
+				<i class="bi bi-file-earmark-rich-text"></i>
+				{{ note.get_display_name }}
+			</a>
+		</div>
+		<hr />
+		{% empty %}
+		<p>No recent notes uploaded.</p>
+		{% endfor %}
+	</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script>
+	$(function () {
+		const table = $('#coursesTable').DataTable();
+		let ascending = true;
+		$('#sortButton').click(function () {
+			table.order([1, ascending ? 'asc' : 'desc']).draw();
+			$(this).text(ascending ? 'Z to A' : 'A to Z');
+			ascending = !ascending;
+		});
+	});
+</script>
+
+<script>
+	document
+		.getElementById('newNoteButton')
+		.addEventListener('click', function (event) {
+			const isAuthenticated = "{{ user.is_authenticated|yesno:'true,false' }}";
+			if (isAuthenticated !== 'true') {
+				event.preventDefault();
+				const alertHTML = `
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    You need to be authenticated to upload notes.
+                    <button type="button" class="btn btn-warning btn-sm ms-2" id="loginBtn">Login</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="alert">Cancel</button>
+                </div>
+            `;
+				document.getElementById('alert-container').innerHTML = alertHTML;
+				if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+
+				document
+					.getElementById('loginBtn')
+					.addEventListener('click', function () {
+						window.location.href = '{% url "login" %}';
+					});
+			}
+		});
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends "mainapp/base.html" %} {% load crispy_forms_filters %} {% load
+crispy_forms_tags %} {% block title %} Upload {% endblock %} {% block content %}
+
+<h2 style="text-align: text-center">Note details:</h2>
+{% include "components/notes_form.html" %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+	$(document).ready(async function () {
+		async function loadDataFromLocalStorage() {
+			const items = ['college', 'school', 'department', 'course', 'unit'];
+			for (const item of items) {
+				const id = localStorage.getItem(item + 'Id');
+				if (id) {
+					$('#' + item).val(id);
+					await populateDropdown(item);
+				}
+			}
+		}
+
+		async function populateDropdown(dropdownId, parentId = null) {
+			const urls = {
+				college: '/get_colleges/',
+				school: '/get_schools/',
+				department: '/get_departments/',
+				course: '/get_courses/',
+				unit: '/get_units/',
+			};
+			const params = {};
+			if (parentId) {
+				params[parentId + '_id'] = $('#' + parentId).val();
+			}
+
+			try {
+				const response = await $.ajax({
+					url: urls[dropdownId],
+					method: 'GET',
+					data: params,
+				});
+
+				const dropdown = $('#' + dropdownId);
+				dropdown.empty().append(
+					$('<option>', {
+						value: '',
+						text:
+							'Select ' +
+							dropdownId.charAt(0).toUpperCase() +
+							dropdownId.slice(1),
+					})
+				);
+
+				const data = response[dropdownId + 's'] || response;
+				$.each(data, function (index, item) {
+					dropdown.append($('<option>', { value: item.id, text: item.name }));
+				});
+
+				// Clear child dropdowns
+				const childDropdowns = {
+					college: ['school', 'department', 'course', 'unit'],
+					school: ['department', 'course', 'unit'],
+					department: ['course', 'unit'],
+					course: ['unit'],
+					unit: [],
+				};
+				childDropdowns[dropdownId].forEach((child) => $('#' + child).empty());
+			} catch (error) {
+				console.error('Error fetching ' + dropdownId + 's:', error);
+			}
+		}
+
+		// Event listeners for dropdowns
+		$('#college').change(() => populateDropdown('school', 'college'));
+		$('#school').change(() => populateDropdown('department', 'school'));
+		$('#department').change(() => populateDropdown('course', 'department'));
+		$('#course').change(() => populateDropdown('unit', 'course'));
+
+		$('#notes-form').submit(async function (e) {
+			e.preventDefault();
+			const formData = new FormData(this);
+
+			// Save selected values to localStorage
+			['college', 'school', 'department', 'course', 'unit'].forEach((item) => {
+				localStorage.setItem(item + 'Id', $('#' + item).val());
+			});
+
+			try {
+				const response = await $.ajax({
+					url: '/submit_notes/',
+					method: 'POST',
+					processData: false,
+					contentType: false,
+					data: formData,
+				});
+
+				if (response.success) {
+					$('#success-note').removeClass('d-none').addClass('d-block');
+					setTimeout(() => {
+						window.location.href = response.message;
+					}, 3000);
+				} else {
+					throw new Error('Submission was not successful');
+				}
+			} catch (error) {
+				alert('Something went wrong');
+				console.error('Error submitting form:', error);
+			}
+		});
+
+		await loadDataFromLocalStorage();
+		await populateDropdown('college');
+	});
+</script>
+{% endblock %}
