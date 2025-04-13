@@ -16,6 +16,9 @@ def note_file_path(instance, filename):
 class Course(models.Model):
     name = models.CharField(max_length=100)
 
+    def get_display_name(self):
+        return self.name.upper()
+    
     def __str__(self):
         return self.name
 
