@@ -14,6 +14,7 @@ from django.views.generic.edit import FormView
 from django_daraja.mpesa.core import MpesaClient
 from django.db.models import Prefetch
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
 
 from .forms import *
 from .models import Note, Course, Unit, UserRequest
@@ -207,48 +208,53 @@ def mpesa(request):
             settings.MPESA_CALLBACK_URL,
         )
 
+        # Try extracting status safely
+        try:
+            # Try to convert response to dict
+            response_data = response.json() if hasattr(response, 'json') else response.__dict__
+            status = response_data.get("status", "failed")
+        except Exception as e:
+            print("MPESA error:", e)
+            status = "failed"
+
+        # Store status in session to check later
+        request.session["payment_success"] = status == "success"
+
         context = {
             "previous_url": request.META.get("HTTP_REFERER"),
-            "success_message"
-            if response.get("status") == "success"
-            else "error_message": "Payment initiated successfully!"
-            if response.get("status") == "success"
-            else "Payment initiation failed. Please try again.",
+            "success_message" if status == "success" else "error_message":
+                "Payment initiated successfully!" if status == "success" else "Payment initiation failed. Please try again.",
         }
         return render(request, "mainapp/money.html", context)
 
     return render(request, "mainapp/money.html")
 
+@csrf_exempt
+def check_payment_status(request):
+    # If you're storing status in session
+    success = request.session.get("payment_success", False)
+    return JsonResponse({"success": success})
 
+@csrf_exempt
 def mpesa_callback(request):
-    if request.method != "POST":
-        return JsonResponse({"status": "error", "message": "Invalid request method."})
-
-    try:
+    if request.method == "POST":
         data = json.loads(request.body)
-        callback = data.get("Body", {}).get("stkCallback", {})
-        result_code = callback.get("ResultCode")
-        result_desc = callback.get("ResultDesc")
-        metadata = callback.get("CallbackMetadata", {}).get("Item", [])
 
-        amount = metadata[0].get("Value") if len(metadata) > 0 else None
-        phone_number = metadata[4].get("Value") if len(metadata) > 4 else None
+        # Optional: Log or store payment info
+        print("Callback data:", data)
 
-        if result_code == "0":
-            return JsonResponse(
-                {
-                    "status": "success",
-                    "message": "Payment confirmed successfully.",
-                    "amount": amount,
-                    "phone_number": phone_number,
-                }
-            )
-        return JsonResponse({"status": "failed", "message": result_desc})
+        # Here you can check `data['Body']['stkCallback']['ResultCode']` for success/failure
+        try:
+            result_code = data["Body"]["stkCallback"]["ResultCode"]
+            result_desc = data["Body"]["stkCallback"]["ResultDesc"]
 
-    except (json.JSONDecodeError, IndexError, KeyError) as e:
-        return JsonResponse(
-            {"status": "error", "message": "Invalid callback data.", "error": str(e)}
-        )
+            success = result_code == 0
+            # Save to DB or mark session/payment accordingly
+
+            return JsonResponse({"ResultCode": 0, "ResultDesc": "Accepted"})
+        except KeyError:
+            return JsonResponse({"ResultCode": 1, "ResultDesc": "Failed to parse callback"})
+    return JsonResponse({"ResultCode": 1, "ResultDesc": "Invalid method"})
 
 
 def error_404_view(request, exception):
@@ -261,3 +267,4 @@ def sitemap(request):
 
 def robots(request):
     return render(request, "robots.txt")
+

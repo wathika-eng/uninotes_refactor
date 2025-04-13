@@ -9,21 +9,9 @@ from django.utils.text import slugify
 User = get_user_model()
 
 
-# def note_file_path(instance, filename):
-#     base = os.path.splitext(filename)[0].split(".")[0][:20]
-#     ext = os.path.splitext(filename)[1]
-#     return f"{base}{ext}"
-
-
 def note_file_path(instance, filename):
-    # Get the unit ID and sanitize it (slugify ensures it works well for URLs)
     unit_slug = slugify(instance.unit.name)
-
-    # Get the original file name without extension
     base_filename, extension = os.path.splitext(filename)
-
-    # Construct the file path for Cloudinary
-    # You can add a unique identifier like a timestamp or the instance id to prevent name conflicts
     return f"notes/{instance.unit.course.id}/{unit_slug}/{base_filename}-{instance.id}{extension}"
 
 
@@ -102,12 +90,12 @@ class Note(models.Model):
         indexes = [models.Index(fields=["-uploaded_at"])]
 
 
-for note in Note.objects.all():
-    base, ext = os.path.splitext(os.path.basename(note.file.name))
-    base = base.split(".")[0]  # just get base without extra .pdf
-    new_name = f"{base}{ext}"
-    note.file.name = os.path.join("media", new_name)
-    note.save()
+# for note in Note.objects.all():
+#     base, ext = os.path.splitext(os.path.basename(note.file.name))
+#     base = base.split(".")[0]  # just get base without extra .pdf
+#     new_name = f"{base}{ext}"
+#     note.file.name = os.path.join("media", new_name)
+#     note.save()
 
 
 class UserRequest(models.Model):

@@ -45,6 +45,7 @@ urlpatterns = [
         name="course_details",
     ),
     path("mpesa", views.mpesa, name="mpesa"),
+    path("check-payment-status/", views.check_payment_status, name="check_payment_status"),
     path("sitemap.xml", views.sitemap, name="sitemap"),
     path("robots.txt", views.robots, name="robots"),
     path("mpesa/callback/", views.mpesa_callback, name="mpesa_callback"),
