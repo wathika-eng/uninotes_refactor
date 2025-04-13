@@ -1,5 +1,4 @@
-{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %} 
-{% block content %}
+{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %} {% block content %}
 <div class="container-sm" id="alert-container"></div>
 
 <a
@@ -138,26 +137,25 @@
 		// Initialize DataTables after load
 		loadDataTables().then(() => {
 			const table = $('#coursesTable').DataTable({
-			paging: true,
-			searching: true,
-			info: false,
-			ordering: true,
-			responsive: true,
-			autoWidth: false, // helps prevent column mismatch
-			columnDefs: [
-				{ targets: '_all', defaultContent: '' } // fill missing cells safely
-			],
-		initComplete: function () {
-			let asc = true;
-			$('#sortButton').on('click', function () {
-				table.order([1, asc ? 'asc' : 'desc']).draw();
-				asc = !asc;
-				$(this).text(asc ? 'A to Z' : 'Z to A');
+				paging: true,
+				searching: true,
+				info: false,
+				ordering: true,
+				responsive: true,
+				autoWidth: false, // helps prevent column mismatch
+				columnDefs: [
+					{ targets: '_all', defaultContent: '' }, // fill missing cells safely
+				],
+				initComplete: function () {
+					let asc = true;
+					$('#sortButton').on('click', function () {
+						table.order([1, asc ? 'asc' : 'desc']).draw();
+						asc = !asc;
+						$(this).text(asc ? 'A to Z' : 'Z to A');
+					});
+				},
 			});
-		}
-	});
-});
-
+		});
 	});
 </script>
 {% endblock %}

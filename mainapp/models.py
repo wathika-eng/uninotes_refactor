@@ -57,14 +57,13 @@ class Note(models.Model):
 
     def get_display_name(self):
         filename = os.path.basename(self.file.name)
-        base, ext = os.path.splitext(filename)
-        return f"{base[:20]}{ext}"
-
+        base, _ = os.path.splitext(filename)
+        return base[:20] 
+    
     def save(self, *args, **kwargs):
         if not self.title:
             self.title = os.path.splitext(os.path.basename(self.file.name))[0][:20]
-        if not self.file.name.startswith("media/"):
-            self.file.name = note_file_path(self, self.file.name)
+        self.file.name = note_file_path(self, self.file.name)
         super().save(*args, **kwargs)
 
     class Meta:

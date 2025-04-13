@@ -79,7 +79,7 @@ def dashboard(request):
         )
         .only("id", "name")
     )  # Only fetch fields we need
-    print(courses_with_notes)
+
     # Get recent notes with optimized query
     recent_notes = Note.objects.select_related("unit", "unit__course").order_by(
         "-uploaded_at"
