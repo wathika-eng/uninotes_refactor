@@ -19,7 +19,7 @@ from .forms import *
 from .models import Note, Course, Unit, UserRequest
 
 
-def health_check(request):
+def health_check():
     return JsonResponse({"status": "ok"}, status=200)
 
 
@@ -63,22 +63,10 @@ def submit_request(request):
     return render(request, "mainapp/modal.html")
 
 
-#@cache_page(60 * 15)  # Cache for 15 minutes
+# views.py
 def dashboard(request):
-    # Optimized query to get courses with notes and prefetch related data
-    courses_with_notes = (
-        Course.objects.filter(units__notes__isnull=False)
-        .distinct()
-        .prefetch_related(
-            Prefetch(
-                "units",
-                queryset=Unit.objects.annotate(notes_count=Count("notes"))
-                .filter(notes_count__gt=0)
-                .only("id", "name", "year_of_study", "sem"),
-            )
-        )
-        .only("id", "name")
-    )  # Only fetch fields we need
+    # Get all courses with optimized query
+    all_courses = Course.objects.all().only("id", "name").order_by("name")
 
     # Get recent notes with optimized query
     recent_notes = Note.objects.select_related("unit", "unit__course").order_by(
@@ -88,48 +76,43 @@ def dashboard(request):
     return render(
         request,
         "mainapp/dashboard.html",
-        {"courses": courses_with_notes, "notes": recent_notes},
+        {
+            "courses": all_courses,
+            "notes": recent_notes,
+            "courses_with_notes": set(
+                Note.objects.values_list("unit__course_id", flat=True)
+            ),
+        },
     )
 
 
-class FileFieldFormView(FormView):
-    form_class = NoteForm
-    template_name = "mainapp/create_note.html"
-    success_url = reverse_lazy("dashboard")
+# @cache_page(60 * 15)  # Cache for 15 minutes
+# def dashboard(request):
+#     # Optimized query to get courses with notes and prefetch related data
+#     courses_with_notes = (
+#         Course.objects.filter(units__notes__isnull=False)
+#         .distinct()
+#         .prefetch_related(
+#             Prefetch(
+#                 "units",
+#                 queryset=Unit.objects.annotate(notes_count=Count("notes"))
+#                 .filter(notes_count__gt=0)
+#                 .only("id", "name", "year_of_study", "sem"),
+#             )
+#         )
+#         .only("id", "name")
+#     )  # Only fetch fields we need
 
-    def form_valid(self, form):
-        files = self.request.FILES.getlist("note_file")
-        for f in files:
-            if Note.objects.filter(title=f.name).exists():
-                messages.warning(self.request, f"File '{f.name}' already exists.")
-                return JsonResponse(
-                    {"success": False, "message": "File already exists"}
-                )
-            Note.objects.create(
-                file=f, uploaded_by=self.request.user, unit=form.cleaned_data["unit"]
-            )
-        messages.success(self.request, "Files uploaded successfully")
-        return super().form_valid(form)
+#     # Get recent notes with optimized query
+#     recent_notes = Note.objects.select_related("unit", "unit__course").order_by(
+#         "-uploaded_at"
+#     )[:5]
 
-
-@login_required(login_url="login")
-def create_record(request):
-    form = NoteForm(request.POST or None, request.FILES or None)
-    if request.method == "POST" and form.is_valid():
-        view = FileFieldFormView()
-        view.request = request
-        view.form_valid(form)
-        return redirect("dashboard")
-
-    context = {
-        "form": form,
-        "courses": Course.objects.all(),
-        "units": Unit.objects.all(),
-        "notes": Note.objects.select_related(
-            "college", "school", "department", "course", "unit"
-        ),
-    }
-    return render(request, "mainapp/create_notes.html", context)
+#     return render(
+#         request,
+#         "mainapp/dashboard.html",
+#         {"courses": courses_with_notes, "notes": recent_notes},
+#     )
 
 
 # def create_unit(request):
@@ -153,6 +136,58 @@ def create_record(request):
 #         html_message=html_message
 #     )
 #     return render(request, "mainapp/registration/password_reset_done.html")
+class FileFieldFormView(FormView):
+    form_class = NoteForm
+    template_name = "mainapp/create_note.html"
+    success_url = reverse_lazy("dashboard")
+
+    def form_valid(self, form):
+        files = self.request.FILES.getlist("note_file")
+        for f in files:
+            # Check if the file already exists
+            if Note.objects.filter(title=f.name).exists():
+                messages.warning(self.request, f"File '{f.name}' already exists.")
+                return JsonResponse(
+                    {"success": False, "message": f"File '{f.name}' already exists"}
+                )
+            # Create the note
+            Note.objects.create(
+                file=f, uploaded_by=self.request.user, unit=form.cleaned_data["unit"]
+            )
+
+        # Show success message
+        messages.success(self.request, "Files uploaded successfully.")
+
+        # Return the regular response
+        return super().form_valid(form)
+
+
+@login_required(login_url="login")
+def create_record(request):
+    form = NoteForm(request.POST or None, request.FILES or None)
+
+    if request.method == "POST" and form.is_valid():
+        # Instantiate and use the FormView to handle the form
+        view = FileFieldFormView()
+        view.request = request
+        response = view.form_valid(form)
+
+        # If the response is a JSON response (AJAX), return it directly
+        if isinstance(response, JsonResponse):
+            return response
+
+        # Redirect to the dashboard after successful form submission
+        return redirect("dashboard")
+
+    context = {
+        "form": form,
+        "courses": Course.objects.all(),
+        "units": Unit.objects.all(),
+        "notes": Note.objects.select_related(
+            "college", "school", "department", "course", "unit"
+        ),
+    }
+    return render(request, "mainapp/create_notes.html", context)
 
 
 def mpesa(request):

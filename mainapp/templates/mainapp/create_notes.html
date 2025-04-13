@@ -1,7 +1,6 @@
 {% extends "mainapp/base.html" %} {% load crispy_forms_tags crispy_forms_filters
 %} {% block title %}Upload{% endblock %} {% block content %}
 <div class="container mt-4 bg-light py-5">
-	<!-- Heading -->
 	<h2 class="text-center mb-4">Upload Note</h2>
 
 	<!-- Flash Messages -->
@@ -16,7 +15,10 @@
 	</div>
 	{% endfor %}
 
-	<!-- AJAX Success Message -->
+	<!-- Dynamic Alert Container -->
+	<div id="form-alerts" class="my-3"></div>
+
+	<!-- Upload Success -->
 	<div
 		id="success-alert"
 		class="alert alert-success alert-dismissible fade show d-none"
@@ -34,25 +36,41 @@
 		<form id="notes-form" enctype="multipart/form-data" method="POST">
 			{% csrf_token %}
 
-			<!-- Course Field -->
+			<!-- Course -->
 			<div class="mb-3">
 				<label for="course" class="form-label">Course:</label>
-				<select id="course" name="course" required class="form-select">
+				<select id="course" name="course" class="form-select" required>
 					<option value="">Select</option>
 				</select>
 			</div>
 
-			<!-- Unit Field -->
+			<!-- Unit Select -->
 			<div class="mb-3">
-				<label for="unit" class="form-label">Unit:</label>
-				<select id="unit" name="unit" required class="form-select">
-					<option value="">Select</option>
+				<label for="unit" class="form-label">Select Existing Unit:</label>
+				<select id="unit" name="unit" class="form-select">
+					<option value="">(Optional) Select an existing unit</option>
 				</select>
+			</div>
+
+			<!-- Or Type Unit -->
+			<div class="mb-3">
+				<label for="unit_name" class="form-label"
+					>Or Type New Unit: (if missing)</label
+				>
+				<input
+					type="text"
+					id="unit_input"
+					name="unit_name"
+					class="form-control"
+					placeholder="Economics 101" />
 			</div>
 
 			<!-- File Input -->
 			<div class="mb-3">
-				<label for="note_file" class="form-label">Note File:</label>
+				<label for="note_file" class="form-label"
+					>Note File:
+					<strong><span>Images and PDFs allowed</span></strong></label
+				>
 				<input
 					type="file"
 					id="note_file"
@@ -60,13 +78,13 @@
 					class="form-control"
 					multiple
 					required
-					accept=".pdf,.doc,.docx,.pptx,.rtf,.png,.jpeg,.jpg" />
+					accept=".pdf,.png,.jpeg,.jpg" />
 				<div id="fileSizeWarning" class="text-danger mt-2 d-none">
 					<strong>File size exceeds 20MB. Please select a smaller file.</strong>
 				</div>
 			</div>
 
-			<!-- Progress Bar -->
+			<!-- Progress -->
 			<div class="progress mb-3 d-none" id="upload-progress">
 				<div
 					id="progress-bar"
@@ -78,7 +96,7 @@
 					aria-valuemax="100"></div>
 			</div>
 
-			<!-- Submit Button -->
+			<!-- Submit -->
 			<button type="submit" id="submitBtn" class="btn btn-primary w-100">
 				Submit
 			</button>
@@ -93,20 +111,17 @@
 	crossorigin="anonymous"></script>
 <script>
 	$(function () {
-		// Populate course dropdown
-		populateSelect('/get_courses/', '#course');
+		// Utility: Show Bootstrap alert
+		function showAlert(type, message) {
+			const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>`;
+			$('#form-alerts').html(alertHTML);
+		}
 
-		// On course change, fetch related units
-		$('#course').on('change', function () {
-			const courseId = $(this).val();
-			if (courseId) {
-				populateSelect(`/get_units/?course_id=${courseId}`, '#unit');
-			} else {
-				$('#unit').empty().append('<option value="">Select</option>');
-			}
-		});
-
-		// Populate helper function
+		// Populate course and unit selects
 		function populateSelect(url, selectId) {
 			$.get(url, function (data) {
 				const select = $(selectId);
@@ -117,28 +132,87 @@
 			});
 		}
 
-		// Validate file size on change
+		populateSelect('/get_courses/', '#course');
+
+		$('#course').on('change', function () {
+			const courseId = $(this).val();
+			if (courseId) {
+				populateSelect(`/get_units/?course_id=${courseId}`, '#unit');
+			} else {
+				$('#unit').empty().append('<option value="">Select</option>');
+			}
+		});
+
+		// Disable unit input/select interchangeably
+		$('#unit').on('change', function () {
+			$('#unit_input').prop('disabled', $(this).val() !== '');
+		});
+
+		$('#unit_input').on('input', function () {
+			$('#unit').prop('disabled', $(this).val().trim().length > 0);
+		});
+
+		// Allowed extensions
+		const allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
+
+		// File type & size validation
+		function validateFiles() {
+			const files = document.getElementById('note_file').files;
+			const maxSize = 20 * 1024 * 1024;
+			for (let file of files) {
+				const ext = file.name.split('.').pop().toLowerCase();
+				if (!allowedExtensions.includes(ext)) {
+					showAlert(
+						'danger',
+						`❌ File type not allowed: <strong>${file.name}</strong>`
+					);
+					return false;
+				}
+				if (file.size > maxSize) {
+					showAlert('danger', `❌ ${file.name} exceeds 20MB.`);
+					return false;
+				}
+			}
+			return true;
+		}
+
 		$('#note_file').on('change', function () {
-			const maxFileSize = 20 * 1024 * 1024; // 20MB
 			const files = this.files;
+			const maxSize = 20 * 1024 * 1024;
 			let tooLarge = false;
 
 			for (const file of files) {
-				if (file.size > maxFileSize) {
+				if (file.size > maxSize) {
 					tooLarge = true;
 					break;
 				}
 			}
-
 			$('#fileSizeWarning').toggleClass('d-none', !tooLarge);
 		});
 
-		// AJAX File Upload with Progress
+		// Submit handler
 		$('#notes-form').on('submit', function (e) {
 			e.preventDefault();
+
+			if (!validateFiles()) return;
+
+			const unitSelectVal = $('#unit').val();
+			const unitInputVal = $('#unit_input').val().trim();
+
+			if (!unitSelectVal && !unitInputVal) {
+				showAlert(
+					'danger',
+					'❗ Please either select a unit or type a new one.'
+				);
+				return;
+			}
+
 			const formData = new FormData(this);
 			$('#submitBtn').text('Uploading...');
 			$('#upload-progress').removeClass('d-none');
+			for (let [key, value] of formData.entries()) {
+				console.log(key, value);
+			}
 
 			$.ajax({
 				xhr: function () {
@@ -159,19 +233,38 @@
 				data: formData,
 				contentType: false,
 				processData: false,
-				success: function () {
-					$('#progress-bar')
-						.removeClass('bg-danger')
-						.addClass('bg-success')
-						.text('Upload complete');
-					$('#success-alert').removeClass('d-none');
-					$('#notes-form')[0].reset();
+				success: function (response) {
+					if (response.success) {
+						$('#progress-bar')
+							.removeClass('bg-danger')
+							.addClass('bg-success')
+							.text('Upload complete');
+						$('#success-alert').removeClass('d-none');
+						$('#notes-form')[0].reset();
+					} else {
+						showAlert('danger', response.message);
+						return;
+					}
 				},
-				error: function () {
+				error: function (xhr, status, error) {
+					// Handle error responses
 					$('#progress-bar')
 						.removeClass('bg-success')
 						.addClass('bg-danger')
 						.text('Upload failed!');
+
+					// Try parsing JSON response
+					try {
+						const response = JSON.parse(xhr.responseText);
+						if (response.message) {
+							showAlert('danger', response.message); // Show backend error message
+						} else {
+							showAlert('danger', 'Something went wrong. Please try again.');
+						}
+					} catch (e) {
+						// If the response is not JSON or there's an error, show a generic error message
+						showAlert('danger', 'Something went wrong. Please try again.');
+					}
 				},
 				complete: function () {
 					$('#submitBtn').text('Submit');
@@ -182,6 +275,8 @@
 							.css('width', '0%')
 							.text('');
 					}, 3000);
+					$('#unit').prop('disabled', false);
+					$('#unit_input').prop('disabled', false);
 				},
 			});
 		});

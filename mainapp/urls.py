@@ -2,7 +2,7 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
-from . import sitemaps 
+from . import sitemaps
 from django.contrib.sitemaps.views import sitemap
 from . import note_views
 from django.contrib.auth import views as auth_views

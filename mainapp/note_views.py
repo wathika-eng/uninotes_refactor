@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpRequest
 from .models import Course, Unit, Note
@@ -55,42 +56,72 @@ def get_units(request: HttpRequest):
 def submit_notes(request):
     if request.method == "POST":
         try:
-            # Check if all necessary fields are in the request
             unit_id = request.POST.get("unit")
-            if not unit_id:
-                return JsonResponse({"success": False, "message": "Unit is required."})
+            unit_name = request.POST.get("unit_name", "").strip()
+            course_id = request.POST.get("course")
+            year = request.POST.get("year_of_study")
+            sem = request.POST.get("sem")
+            print(f"Unit ID: {unit_id}, Unit Name: {unit_name}, Course ID: {course_id}")
+            unit = None
 
-            unit = get_object_or_404(Unit, pk=unit_id)
+            # Option 1: Use existing unit
+            if unit_id:
+                unit = get_object_or_404(Unit, pk=unit_id)
+
+            # If unit_name and course_id are provided, create a new unit
+            elif unit_name and course_id:
+                course = get_object_or_404(Course, pk=course_id)
+                unit, created = Unit.objects.get_or_create(
+                    name=unit_name,
+                    course=course,
+                    year_of_study=year,
+                    sem=sem,
+                    defaults={"uploaded_by": request.user},
+                )
+            else:
+                return JsonResponse(
+                    {"success": False, "message": "Please select or type a unit name."}
+                )
 
             uploaded_files = request.FILES.getlist("note_file")
             if not uploaded_files:
                 return JsonResponse(
-                    {"success": False, "message": "At least one file must be uploaded."}
+                    {"success": False, "message": "Please upload at least one file."}
                 )
 
-            # Loop through uploaded files and create Note objects
             for uploaded_file in uploaded_files:
-                # Optional: Validate file type and size
-                if uploaded_file.size > 10 * 1024 * 1024:  # Example: max file size 10MB
+                if uploaded_file.size > 20 * 1024 * 1024:
                     return JsonResponse(
-                        {"success": False, "message": "File size exceeds limit (10MB)."}
+                        {"success": False, "message": "File exceeds 10MB limit."}
+                    )
+                # cloudinary_response = cloudinary.uploader.upload(uploaded_file)
+
+                # # Debugging output
+                # print(f"Cloudinary Response: {cloudinary_response}")
+                try:
+                    note = Note.objects.create(
+                        title=uploaded_file.name,
+                        file=uploaded_file,
+                        unit=unit,
+                        uploaded_by=request.user,
+                    )
+                    # Debugging: Print the note that was just created
+                    print(f"Note uploaded: {note}")
+                    print(
+                        f"Note details: {Note.objects.filter(title=uploaded_file.name)}"
                     )
 
-                # Save the note
-                Note.objects.create(
-                    title=uploaded_file.name,
-                    file=uploaded_file,
-                    uploaded_by=request.user,
-                    unit=unit,
-                )
+                except IntegrityError as e:
+                    print(f"Error uploading note: {e}")
+                    return JsonResponse(
+                        {"success": False, "message": f"Error: {str(e)}"}
+                    )
 
-            # Return success response with the unit details page URL
             return JsonResponse(
                 {"success": True, "message": f"/unit_details/{unit.id}"}
             )
 
         except Exception as e:
-            # Catch any exceptions and return a detailed error message
             return JsonResponse({"success": False, "message": f"Error: {str(e)}"})
 
     return JsonResponse({"success": False, "message": "Invalid request method."})

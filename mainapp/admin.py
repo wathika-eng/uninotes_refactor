@@ -1,10 +1,15 @@
 from django.contrib import admin
+from django import forms
+from django.urls import path
+from django.shortcuts import render
+from django.contrib import messages
 from mainapp.models import Unit, Note, UserRequest, Course
+import csv
 
 
 class UnitAdmin(admin.ModelAdmin):
     list_filter = [
-        "course_name",
+        "course",
         "year_of_study",
         "uploaded_by",
     ]  # Filtering by course_name instead of Course
@@ -37,10 +42,69 @@ class NoteAdmin(admin.ModelAdmin):
     )  # Display additional fields in the list
 
 
+class CSVUploadForm(forms.Form):
+    csv_file = forms.FileField()
+
+
+from django.urls import re_path
+
+
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ("name",)  # Fields to display in the admin list view
-    search_fields = ("name",)  # Fields to enable searching in the admin
-    list_filter = ("name",)  # Fields to filter by in the admin
+    list_display = ["name"]
+    # change_list_template = "admin/courses_change_list.html"  # Optional custom template
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            re_path(
+                r"^upload-csv/$",
+                self.admin_site.admin_view(self.import_csv),
+                name="courses_upload_csv",
+            ),
+        ]
+        return my_urls + urls
+
+    def import_csv(self, request):
+        if request.method == "POST":
+            form = CSVUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    csv_file = request.FILES["csv_file"]
+                    reader = csv.DictReader(
+                        csv_file.read().decode("utf-8").splitlines()
+                    )
+                    count = 0
+                    for row in reader:
+                        course_name = row["Course Name"].strip()
+                        if not Course.objects.filter(name__iexact=course_name).exists():
+                            Course.objects.create(name=course_name)
+                            count += 1
+                    self.message_user(
+                        request,
+                        f"Successfully imported {count} courses",
+                        messages.SUCCESS,
+                    )
+                except Exception as e:
+                    self.message_user(
+                        request, f"Error importing CSV: {e}", messages.ERROR
+                    )
+        else:
+            form = CSVUploadForm()
+
+        context = {
+            "form": form,
+            "opts": self.model._meta,
+            "title": "Import CSV",
+        }
+        return render(request, "admin/csv_upload.html", context)
+
+    def import_courses(self, request, queryset):
+        from django.http import HttpResponseRedirect
+
+        return HttpResponseRedirect("upload-csv/")
+
+    import_courses.short_description = "Import courses from CSV"
+    actions = [import_courses]
 
 
 # @admin.register(UserRequest)

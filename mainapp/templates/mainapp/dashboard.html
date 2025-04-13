@@ -23,6 +23,7 @@
 						<th>Year</th> -->
 					</tr>
 				</thead>
+				<!-- dashboard.html -->
 				<tbody>
 					{% for course in courses %}
 					<tr>
@@ -33,25 +34,14 @@
 								class="text-decoration-none">
 								{{ course.get_display_name }}
 							</a>
+							{% if course.id in courses_with_notes %}
+							<span class="badge bg-success ms-2">Has Notes</span>
+							{% endif %}
 						</td>
-						<!-- <td>
-							{% for unit in course.units.all %}
-							<div>{{ unit.name }}</div>
-							{% empty %}
-							<div>No units available</div>
-							{% endfor %}
-						</td>
-						<td>
-							{% for unit in course.units.all %}
-							<div>Year {{ unit.year_of_study }}</div>
-							{% empty %}
-							<div>No year info available</div>
-							{% endfor %}
-						</td> -->
 					</tr>
 					{% empty %}
 					<tr>
-						<td colspan="4">No courses with notes found.</td>
+						<td colspan="4">No courses found.</td>
 					</tr>
 					{% endfor %}
 				</tbody>

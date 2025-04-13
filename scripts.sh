@@ -15,6 +15,9 @@ python manage.py createsuperuser
 # run the server
 python manage.py runserver
 
+ruff format
+
+pip freeze > requirements.txt
 # reset the database
 python manage.py flush
 

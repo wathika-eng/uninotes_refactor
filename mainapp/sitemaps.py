@@ -17,13 +17,14 @@ class StaticViewSitemap(Sitemap):
 
 class CourseSitemap(Sitemap):
     def items(self):
-        return Course.objects.all().order_by('id')
+        return Course.objects.all().order_by("id")
+
 
 class UnitSitemap(Sitemap):
     def items(self):
-        return Unit.objects.all().order_by('id')
+        return Unit.objects.all().order_by("id")
+
 
 class NoteSitemap(Sitemap):
     def items(self):
-        return Note.objects.all().order_by('-uploaded_at')  # Most recent first
-
+        return Note.objects.all().order_by("-uploaded_at")  # Most recent first
