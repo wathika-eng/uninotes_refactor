@@ -20,8 +20,8 @@
 					<tr>
 						<th>#</th>
 						<th>Course</th>
-						<th>Unit</th>
-						<th>Year</th>
+						<!-- <th>Unit</th>
+						<th>Year</th> -->
 					</tr>
 				</thead>
 				<tbody>
@@ -35,7 +35,7 @@
 								{{ course.get_display_name }}
 							</a>
 						</td>
-						<td>
+						<!-- <td>
 							{% for unit in course.units.all %}
 							<div>{{ unit.name }}</div>
 							{% empty %}
@@ -48,7 +48,7 @@
 							{% empty %}
 							<div>No year info available</div>
 							{% endfor %}
-						</td>
+						</td> -->
 					</tr>
 					{% empty %}
 					<tr>
@@ -138,22 +138,26 @@
 		// Initialize DataTables after load
 		loadDataTables().then(() => {
 			const table = $('#coursesTable').DataTable({
-				paging: true,
-				searching: true,
-				info: false,
-				ordering: true,
-				responsive: true,
-				initComplete: function () {
-					// Sort button toggles Course column A-Z or Z-A
-					let asc = true;
-					$('#sortButton').on('click', function () {
-						table.order([1, asc ? 'asc' : 'desc']).draw();
-						asc = !asc;
-						$(this).text(asc ? 'A to Z' : 'Z to A');
-					});
-				},
+			paging: true,
+			searching: true,
+			info: false,
+			ordering: true,
+			responsive: true,
+			autoWidth: false, // helps prevent column mismatch
+			columnDefs: [
+				{ targets: '_all', defaultContent: '' } // fill missing cells safely
+			],
+		initComplete: function () {
+			let asc = true;
+			$('#sortButton').on('click', function () {
+				table.order([1, asc ? 'asc' : 'desc']).draw();
+				asc = !asc;
+				$(this).text(asc ? 'A to Z' : 'Z to A');
 			});
-		});
+		}
+	});
+});
+
 	});
 </script>
 {% endblock %}

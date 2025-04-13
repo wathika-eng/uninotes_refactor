@@ -20,17 +20,14 @@ class MultipleFileInput(forms.ClearableFileInput):
 
 
 class MultipleFileField(forms.FileField):
-    widget = MultipleFileInput()
-
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("widget", MultipleFileInput())
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
-        clean_single_file = super().clean
         if isinstance(data, (list, tuple)):
-            return [clean_single_file(d, initial) for d in data]
-        return clean_single_file(data, initial)
+            return [super().clean(d, initial) for d in data]
+        return super().clean(data, initial)
 
 
 class NoteForm(forms.ModelForm):
@@ -39,30 +36,23 @@ class NoteForm(forms.ModelForm):
     class Meta:
         model = Note
         fields = "__all__"
-        # Optional: uncomment if you want to exclude specific fields
-        # exclude = ['department', 'unit_topic']
 
 
 class UnitForm(forms.ModelForm):
     class Meta:
         model = Unit
-        fields = [
-            "name",
-            "course",
-            "year_of_study",
-            "sem",
-        ]  # Adjusted based on the current model
+        fields = ["name", "course", "year_of_study", "sem"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if "course" in self.data:
+        course_field = self.fields.get("course")
+        course_id = self.data.get("course")
+
+        if course_id:
             try:
-                course_id = int(self.data.get("course"))
-                self.fields["course"].queryset = Course.objects.filter(id=course_id)
+                course_field.queryset = Course.objects.filter(id=int(course_id))
             except (ValueError, TypeError):
-                self.fields["course"].queryset = Course.objects.none()
+                course_field.queryset = Course.objects.none()
         elif self.instance.pk:
-            self.fields["course"].queryset = Course.objects.filter(
-                id=self.instance.course_id
-            )
+            course_field.queryset = Course.objects.filter(id=self.instance.course_id)

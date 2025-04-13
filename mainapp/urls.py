@@ -10,6 +10,7 @@ urlpatterns = [
     path("register", views.register, name="register"),
     path("logout", views.my_logout, name="mylogout"),
     path("dash", views.dashboard, name="dashboard"),
+        path("healthz", views.health_check, name="health_check"),
     # path(
     #     "send-reset-email/",
     #     views.send_password_reset_email,

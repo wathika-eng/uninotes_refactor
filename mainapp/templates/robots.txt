@@ -7,4 +7,3 @@ Disallow: /admin/
 User-agent: *
 Disallow: /admin/
 
-Sitemap: https://classnotes.azurewebsites.net/sitemap.xml
