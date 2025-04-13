@@ -8,7 +8,7 @@ User = get_user_model()
 
 
 def note_file_path(instance, filename):
-    ext = filename.rsplit(".", 1)[-1]  
+    ext = filename.rsplit(".", 1)[-1]
     base_title = (instance.title or os.path.splitext(filename)[0])[:20]
     return os.path.join("media", f"{base_title}.{ext}")
 
@@ -26,7 +26,9 @@ class Unit(models.Model):
     year_of_study = models.CharField(max_length=20, null=True)
     sem = models.CharField(max_length=20, null=True)
     course = models.ForeignKey(Course, related_name="units", on_delete=models.CASCADE)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="units", null=True, blank=True)
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="units", null=True, blank=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -41,7 +43,9 @@ class Note(models.Model):
     title = models.CharField(max_length=50, null=True, unique=True, blank=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name="notes")
     file = models.FileField(upload_to=note_file_path, unique=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    uploaded_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, blank=True
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=True)
 
@@ -68,6 +72,7 @@ class Note(models.Model):
             ("title", "unit", "file"),
         )
         indexes = [models.Index(fields=["-uploaded_at"])]
+
 
 class UserRequest(models.Model):
     yourschool = models.CharField(max_length=100, null=True)

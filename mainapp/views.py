@@ -18,8 +18,10 @@ from django.views.decorators.cache import cache_page
 from .forms import *
 from .models import Note, Course, Unit, UserRequest
 
+
 def health_check(request):
     return JsonResponse({"status": "ok"}, status=200)
+
 
 def register(request):
     form = CreateUserForm(request.POST or None)

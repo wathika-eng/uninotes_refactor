@@ -2,15 +2,31 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from . import sitemaps 
+from django.contrib.sitemaps.views import sitemap
 from . import note_views
 from django.contrib.auth import views as auth_views
+
+sitemaps = {
+    "static": sitemaps.StaticViewSitemap,
+    "courses": sitemaps.CourseSitemap,
+    "units": sitemaps.UnitSitemap,
+    "notes": sitemaps.NoteSitemap,
+}
+
 
 urlpatterns = [
     path("", views.dashboard, name="dashboard"),
     path("register", views.register, name="register"),
     path("logout", views.my_logout, name="mylogout"),
     path("dash", views.dashboard, name="dashboard"),
-        path("healthz", views.health_check, name="health_check"),
+    path("healthz", views.health_check, name="health_check"),
+    path(
+        "sitemap.xml",
+        sitemap,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.sitemap",
+    ),
     # path(
     #     "send-reset-email/",
     #     views.send_password_reset_email,
