@@ -63,7 +63,7 @@ def submit_request(request):
     return render(request, "mainapp/modal.html")
 
 
-@cache_page(60 * 15)  # Cache for 15 minutes
+#@cache_page(60 * 15)  # Cache for 15 minutes
 def dashboard(request):
     # Optimized query to get courses with notes and prefetch related data
     courses_with_notes = (
@@ -79,7 +79,7 @@ def dashboard(request):
         )
         .only("id", "name")
     )  # Only fetch fields we need
-
+    print(courses_with_notes)
     # Get recent notes with optimized query
     recent_notes = Note.objects.select_related("unit", "unit__course").order_by(
         "-uploaded_at"
