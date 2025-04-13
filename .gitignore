@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/django,node
 # Edit at https://www.toptal.com/developers/gitignore?templates=django,node
-
+*.csv
+*.ruff_cache
+*.DS_Store
 ### Django ###
 *.log
 *.pot
