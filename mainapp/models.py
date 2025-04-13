@@ -16,6 +16,7 @@ def note_file_path(instance, filename):
 
 
 class Course(models.Model):
+    # to remove max_length due to csv upload
     name = models.CharField(max_length=50, unique=True)
 
     def get_display_name(self):

@@ -1,18 +1,18 @@
-{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %} {% block content %}
+{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %} 
+{% block content %}
 <div class="container-sm" id="alert-container"></div>
 
 <a
 	id="newNoteButton"
 	href="{% url 'create_record' %}"
 	class="btn btn-outline-success mb-3">
-	Start uploading notes/past papers <i class="bi bi-file-plus"></i>
+	Upload notes/past papers <i class="bi bi-file-plus"></i>
 </a>
 
 <button class="btn btn-outline-secondary mb-3" id="sortButton">A to Z</button>
 
 <div class="row">
 	<div class="col-md-8">
-		<h4>Upload notes and past papers</h4>
 		<div class="table-responsive">
 			<table class="table table-hover" id="coursesTable">
 				<thead>
@@ -132,9 +132,15 @@
 				info: false,
 				ordering: true,
 				responsive: true,
-				autoWidth: false, // helps prevent column mismatch
+				autoWidth: false,
+				order: [[0, 'desc']], // Default: "Has Notes" on top
 				columnDefs: [
-					{ targets: '_all', defaultContent: '' }, // fill missing cells safely
+					{
+						targets: 0, // our "has notes" column
+						visible: false, // hide column from UI
+						searchable: false,
+					},
+					{ targets: '_all', defaultContent: '' },
 				],
 				initComplete: function () {
 					let asc = true;
