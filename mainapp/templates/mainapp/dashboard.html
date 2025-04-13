@@ -1,88 +1,122 @@
-{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %} 
-{% block content %}
-<div class="container-sm" id="alert-container"></div>
+{% extends "mainapp/base.html" %} {% block title %}Dashboard{% endblock %}
 
-<a
-	id="newNoteButton"
-	href="{% url 'create_record' %}"
-	class="btn btn-outline-success mb-3">
-	Upload notes/past papers <i class="bi bi-file-plus"></i>
-</a>
-
-<button class="btn btn-outline-secondary mb-3" id="sortButton">A to Z</button>
-
-<div class="row">
-	<div class="col-md-8">
-		<div class="table-responsive">
-			<table class="table table-hover" id="coursesTable">
-				<thead>
-					<tr>
-						<th>#</th>
-						<th>Course</th>
-						<!-- <th>Unit</th>
-						<th>Year</th> -->
-					</tr>
-				</thead>
-				<!-- dashboard.html -->
-				<tbody>
-					{% for course in courses %}
-					<tr>
-						<td>{{ forloop.counter }}</td>
-						<td>
-							<a
-								href="{% url 'course_details' course.pk %}"
-								class="text-decoration-none">
-								{{ course.get_display_name }}
-							</a>
-							{% if course.id in courses_with_notes %}
-							<span class="badge bg-success ms-2">Has Notes</span>
-							{% endif %}
-						</td>
-					</tr>
-					{% empty %}
-					<tr>
-						<td colspan="4">No courses found.</td>
-					</tr>
-					{% endfor %}
-				</tbody>
-			</table>
-		</div>
-	</div>
-
-	<div class="col-md-4">
-		<h4>Recently Added Notes</h4>
-		{% for note in notes %}
-		<div class="mb-2">
-			<a
-				href="{{ note.file.url }}"
-				target="_blank"
-				class="text-decoration-none text-primary">
-				<i class="bi bi-file-earmark-rich-text"></i>
-				{{ note.get_display_name }}
-			</a>
-		</div>
-		<hr />
-		{% empty %}
-		<p>No recent notes uploaded.</p>
-		{% endfor %}
-	</div>
-</div>
-
-<!-- Defer non-critical CSS -->
+<!-- Preload & noscript fallback for DataTables CSS -->
 <link
 	rel="preload"
 	href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.2.2/sp-2.3.3/datatables.min.css"
 	as="style"
 	onload="this.onload=null;this.rel='stylesheet'" />
-<noscript
-	><link
+<noscript>
+	<link
 		rel="stylesheet"
-		href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.2.2/sp-2.3.3/datatables.min.css"
-/></noscript>
+		href="https://cdn.datatables.net/v/dt/jq-3.7.0/dt-2.2.2/sp-2.3.3/datatables.min.css" />
+</noscript>
 
-<!-- Async load scripts -->
+{% block content %}
+<div class="container-sm py-3">
+	<!-- Alerts -->
+	<div id="alert-container"></div>
+
+	<!-- Top Action Bar -->
+	<div
+		class="d-flex flex-wrap justify-content-between align-items-center bg-white py-2 border-bottom mb-3 z-2"
+		style="top: 60px">
+		<h2 class="h5 fw-bold m-0">📚 Course Dashboard</h2>
+		<div class="d-flex flex-wrap gap-2">
+			<a
+				id="newNoteButton"
+				href="{% url 'create_record' %}"
+				class="btn btn-success">
+				<i class="bi bi-upload me-1"></i> Upload Notes
+			</a>
+			<button class="btn btn-outline-dark" id="sortButton">
+				<i class="bi bi-sort-alpha-down"></i> Sort by Name (A-Z)
+			</button>
+		</div>
+	</div>
+
+	<div class="row gy-4">
+		<!-- Course Table -->
+		<div class="col-md-8">
+			<div class="card shadow-sm border-0">
+				<div class="card-body p-0">
+					<div class="table-responsive">
+						<table
+							class="table table-hover mb-0 align-middle"
+							id="coursesTable">
+							<thead class="table-light">
+								<tr>
+									<th style="width: 40px">#</th>
+									<th class="d-none">Has Notes</th>
+									<th>Course Name</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for course in courses %}
+								<tr>
+									<td class="text-muted">{{ forloop.counter }}</td>
+									<td class="d-none">
+										{% if course.id in courses_with_notes %}1{% else %}0{% endif %}
+									</td>
+									<td>
+										<a
+											href="{% url 'course_details' course.pk %}"
+											class="fw-semibold text-decoration-none text-dark">
+											{{ course.get_display_name }}
+										</a>
+										{% if course.id in courses_with_notes %}
+										<span class="badge bg-success ms-2">Has Notes</span>
+										{% endif %}
+									</td>
+								</tr>
+								{% empty %}
+								<tr>
+									<td colspan="3" class="text-muted text-center">
+										No courses available.
+									</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Recent Notes Sidebar -->
+		<div class="col-md-4">
+			<div class="card shadow-sm border-0">
+				<div class="card-header bg-primary text-white fw-semibold">
+					📄 Recently Added Notes
+				</div>
+				<div class="card-body">
+					{% for note in notes %}
+					<div class="mb-3">
+						<a
+							href="{{ note.file.url }}"
+							target="_blank"
+							class="d-block text-dark text-decoration-none fw-medium">
+							<i
+								class="bi bi-file-earmark-{{ note.get_file_type_icon }} me-1 text-primary"></i>
+							{{ note.get_display_name }}
+						</a>
+						<small class="text-muted"
+							>{{ note.uploaded_at|date:"M d, Y" }}</small
+						>
+					</div>
+					{% if not forloop.last %}
+					<hr class="my-2" />
+					{% endif %} {% empty %}
+					<p class="text-muted">No recent notes uploaded.</p>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- DataTables JS -->
 <script>
-	// Load DataTables asynchronously
 	function loadDataTables() {
 		return new Promise((resolve) => {
 			const script = document.createElement('script');
@@ -96,61 +130,65 @@
 		});
 	}
 
-	// Initialize after DOM and scripts are ready
 	document.addEventListener('DOMContentLoaded', function () {
-		// Auth check handler
+		const isAuthenticated = "{{ user.is_authenticated|yesno:'true,false' }}";
+
+		// Upload Button Auth Guard
 		document
 			.getElementById('newNoteButton')
 			.addEventListener('click', function (event) {
-				const isAuthenticated =
-					"{{ user.is_authenticated|yesno:'true,false' }}";
 				if (isAuthenticated !== 'true') {
 					event.preventDefault();
-					const alertHTML = `
-          <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            You need to be authenticated to upload notes.
-            <button type="button" class="btn btn-warning btn-sm ms-2" id="loginBtn">Login</button>
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="alert">Cancel</button>
-          </div>
-        `;
-					document.getElementById('alert-container').innerHTML = alertHTML;
+					document.getElementById('alert-container').innerHTML = `
+					<div class="alert alert-warning alert-dismissible fade show" role="alert">
+						<strong>Notice:</strong> You must be logged in to upload notes.
+						<div class="mt-2">
+							<button type="button" class="btn btn-sm btn-warning me-2" id="loginBtn">Login</button>
+							<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="alert">Cancel</button>
+						</div>
+					</div>`;
 					if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-
-					document
-						.getElementById('loginBtn')
-						.addEventListener('click', function () {
-							window.location.href = '{% url "login" %}';
-						});
+					document.getElementById('loginBtn').addEventListener('click', () => {
+						window.location.href = '{% url "login" %}?next={{ request.path }}';
+					});
 				}
 			});
 
-		// Initialize DataTables after load
+		// Load and Init DataTable
 		loadDataTables().then(() => {
 			const table = $('#coursesTable').DataTable({
 				paging: true,
+				pageLength: 10,
 				searching: true,
 				info: false,
 				ordering: true,
 				responsive: true,
 				autoWidth: false,
-				order: [[0, 'desc']], // Default: "Has Notes" on top
-				columnDefs: [
-					{
-						targets: 0, // our "has notes" column
-						visible: false, // hide column from UI
-						searchable: false,
-					},
-					{ targets: '_all', defaultContent: '' },
+				order: [
+					[1, 'desc'],
+					[2, 'asc'],
 				],
-				initComplete: function () {
-					let asc = true;
-					$('#sortButton').on('click', function () {
-						table.order([1, asc ? 'asc' : 'desc']).draw();
-						asc = !asc;
-						$(this).text(asc ? 'A to Z' : 'Z to A');
-					});
+				columnDefs: [
+					{ orderable: false, targets: 0 },
+					{ visible: false, targets: 1 },
+				],
+				language: {
+					search: '_INPUT_',
+					searchPlaceholder: 'Search courses...',
 				},
 			});
+
+			// Sort Toggle
+			let nameSortAsc = true;
+			document
+				.getElementById('sortButton')
+				.addEventListener('click', function () {
+					nameSortAsc = !nameSortAsc;
+					table.order([2, nameSortAsc ? 'asc' : 'desc']).draw();
+					this.innerHTML = nameSortAsc
+						? '<i class="bi bi-sort-alpha-down"></i> Sort by Name (A-Z)'
+						: '<i class="bi bi-sort-alpha-up"></i> Sort by Name (Z-A)';
+				});
 		});
 	});
 </script>

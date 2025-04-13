@@ -1,0 +1,116 @@
+/* === DataTables Pagination Styling === */
+
+.dataTables_wrapper .dataTables_paginate {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	padding: 1rem;
+	font-size: 0.9rem;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+	padding: 0.375rem 0.75rem;
+	margin: 0 2px;
+	border: 1px solid #dee2e6;
+	background-color: #f8f9fa;
+	color: #495057;
+	cursor: pointer;
+	border-radius: 0.25rem;
+	transition: all 0.2s ease-in-out;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+	background-color: #e9ecef;
+	color: #212529;
+	border-color: #ced4da;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+	background-color: #0d6efd;
+	color: #fff !important;
+	border-color: #0d6efd;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+/* Pagination Container */
+.dt-layout-cell.dt-layout-end {
+	display: flex;
+	justify-content: flex-end;
+	padding: 1rem 0;
+}
+
+.dt-paging {
+	display: flex;
+	align-items: center;
+}
+
+.dt-paging nav {
+	display: flex;
+	gap: 0.25rem;
+}
+
+/* Pagination Buttons */
+.dt-paging-button {
+	padding: 0.4rem 0.75rem;
+	background-color: #f8f9fa;
+	color: #212529;
+	border: 1px solid #dee2e6;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	font-size: 0.875rem;
+	transition: all 0.2s ease-in-out;
+}
+
+.dt-paging-button:hover {
+	background-color: #e2e6ea;
+	color: #000;
+}
+
+.dt-paging-button.current {
+	background-color: #0d6efd;
+	color: #fff;
+	border-color: #0d6efd;
+	font-weight: bold;
+}
+
+.dt-paging-button.disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Ellipsis */
+.dt-paging .ellipsis {
+	padding: 0.4rem 0.75rem;
+	color: #6c757d;
+	font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.dt-layout-cell.dt-layout-end {
+		justify-content: center;
+	}
+
+	.dt-paging nav {
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5rem;
+	}
+}
+
+/* Responsive improvement */
+
+@media (max-width: 768px) {
+	.dataTables_wrapper .dataTables_paginate {
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	.dataTables_wrapper .dataTables_paginate .paginate_button {
+		margin-bottom: 0.5rem;
+	}
+}
