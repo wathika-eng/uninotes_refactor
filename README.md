@@ -3,6 +3,10 @@
 The University Notes Project is a web application designed to streamline the management, sharing, and accessibility of academic notes within a university or educational institution.
 It offers a centralized platform where students and faculty can upload, organize, and access course-related materials, fostering collaborative learning and resource sharing.
 
+## test logins:
+`username`: classrep
+`password`: Testing001
+
   **Installation**
 
 To use the University Notes Project locally, follow these steps:
